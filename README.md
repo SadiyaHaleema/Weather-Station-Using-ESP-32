@@ -1,2 +1,2 @@
 # Weather-Station-Using-ESP-8266
-This Project is showing live weather using some sensors DHT11 or BMP180 to measure the humidity ,temperature and pressure 
+This Project is about creating a Weather Station showing  humidity ,temperature, latitude and longitude using sensor DHT11, NEO-6M GPS Module for tracking latitude,longitude,date and time of a location.
