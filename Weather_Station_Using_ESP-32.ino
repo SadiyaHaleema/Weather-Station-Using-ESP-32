@@ -1,4 +1,5 @@
-//Wifi Client library 
+/*Wifi Client library 
+The zip file was not available on github so I added the code by copying it from github to include the WifiClient library*/
 /*
   Client.h - Base class that provides Client
   Copyright (c) 2011 Adrian McEwen.  All right reserved.
@@ -110,7 +111,7 @@ public:
 #endif /* _WIFICLIENT_H_ */
 
 
-
+/*Original Code for displaying values for temperature,humidity and rain sensor */
 
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -128,8 +129,8 @@ WebServer server(80);
 #define DHT11PIN 16               //ESP Pin Connected to DHT sensor
 #define rainAnalog 35             //ESP Pin connected to Analog Signal of Rain Sensor 
 #define rainDigital 34            //ESP Pin connected to Digital Signal of Rain Sensor
-
-
+#define sensorPower 7
+boolean blrain;
 DHT dht(DHT11PIN, DHT11);         // for ESP32 Microcontroller
 
 
@@ -156,9 +157,9 @@ DHT dht(DHT11PIN, DHT11);         // for ESP32 Microcontroller
     Serial.println("Connecting to WiFi..");
   }
 
-  Serial.println("Connected to the WiFi network");
-  Serial.print("IP address:");
-  Serial.println(WiFi.localIP());
+      Serial.println("Connected to the WiFi network");
+      Serial.print("IP address:");
+      Serial.println(WiFi.localIP());
   
    server.on("/",[]()
    {
@@ -394,11 +395,10 @@ String readDHTTemperature()
        {
         Serial.print("Temperature: ");
         Serial.print(temp);
-        //return String(temp);
         Serial.print("ºC ");
 
        }
-      server.handleClient();
+        server.handleClient();
   }
 
   String readDHTHumidity()
@@ -424,13 +424,27 @@ String readDHTTemperature()
 
   String readRain()
   {
-    int rainAnalogVal = analogRead(rainAnalog);
-    int rainDigitalVal = digitalRead(rainDigital);
+
+      digitalWrite(sensorPower, HIGH);  // Turn the sensor ON
+      delay(10);                        // Allow power to settle
+      int rainAnalogVal = analogRead(rainAnalog);
+//    int rainDigitalVal = digitalRead(rainDigital);
 //    return String(rainAnalogVal);
-    Serial.print(rainAnalogVal);
-    Serial.print("\t");
-    //    Serial.println(rainDigitalVal);
-      delay(200);
-    server.handleClient();
+
+
+      if(rainAnalogVal < 200)    //setting up a threshold value 
+      {  
+        blrain = true;
+      }
+      else {
+        blrain = false;
+      }
+        digitalWrite(sensorPower, LOW);    // Turn the sensor OFF
+        Serial.print(rainAnalogVal);
+
+       Serial.print("\t");
+       Serial.println(blrain);
+       delay(200);
+       server.handleClient();
 
   }
