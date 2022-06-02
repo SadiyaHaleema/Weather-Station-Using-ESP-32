@@ -116,21 +116,25 @@ public:
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WebServer.h>
-#include "DHT.h"
-String webpage ="";
+
+#include <DHT.h>
+
 //Connecting with WiFi using network Credentials
-const char* ssid     = "Infinix HOT 8";
-const char* password = "";
+const char* ssid     = "Galaxy Note10+ 5G7188";
+const char* password = "12345677";
 
 WebServer server(80);
 
 
 
-#define DHT11PIN 16               //ESP Pin Connected to DHT sensor
-#define rainAnalog 35             //ESP Pin connected to Analog Signal of Rain Sensor 
-#define rainDigital 34            //ESP Pin connected to Digital Signal of Rain Sensor
-#define sensorPower 7
-boolean blrain;
+#define DHT11PIN 25               //ESP Pin GPIO25 Connected to DHT sensor
+#define rainAnalog 27             //ESP Pin connected to Analog Signal of Rain Sensor 
+#define rainDigital 26            //ESP Pin connected to Digital Signal of Rain Sensor
+
+float temp;
+int humi;
+int rainAnalogVal;
+int rainDigitalVal;
 DHT dht(DHT11PIN, DHT11);         // for ESP32 Microcontroller
 
 
@@ -141,30 +145,28 @@ DHT dht(DHT11PIN, DHT11);         // for ESP32 Microcontroller
   void setup()
   {
   //Serial Port for debugging process
-  Serial.begin(115200);
+    Serial.begin(115200);
+    delay(2000);
  /* Start the DHT11 Sensor */
-  dht.begin();
+    dht.begin();
   
    /* Connect to WiFi */
 
-      WiFi.begin(ssid, password);
-      Serial.print("Connecting to ");
-      Serial.print(ssid);
-
- 
-  while (WiFi.status() != WL_CONNECTED) {
+    WiFi.begin(ssid, password);
+      
+    while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.println("Connecting to WiFi..");
-  }
+    Serial.print("Connecting to ");
+    Serial.print(ssid);
+      }
 
       Serial.println("Connected to the WiFi network");
       Serial.print("IP address:");
       Serial.println(WiFi.localIP());
   
-   server.on("/",[]()
-   {
+    server.on("/",[](){
 
-     const char index_html[] PROGMEM = R"rawliteral(
+    const char index_html[] PROGMEM = R"rawliteral(
 
     <!DOCTYPE html>
     <html>
@@ -172,8 +174,7 @@ DHT dht(DHT11PIN, DHT11);         // for ESP32 Microcontroller
     <title>Weather Station Using ESP 32</title>
     </head>
     <style>
-    @import url(https://fonts.googleapis.com/css?family=Montserrat);
-    @import url(https://fonts.googleapis.com/css?family=Advent+Pro:400,200);
+
     * {
       margin: 0;
       padding: 0;
@@ -319,16 +320,16 @@ DHT dht(DHT11PIN, DHT11);         // for ESP32 Microcontroller
         <ul class="infos">
           <li class="info temp">
             <h2 class="title">TEMPERATURE</h2>
-            <span class="update" id="temp">21 &deg;C</span>
+            <span class="update" id="temp">32 &deg;C</span>
           </li>
 
           <li class="info wind">
             <h2 class="title">RAIN</h2>
-            <span class="update" id="rain">0%</span>
+            <span class="update" id="rain">266</span>
           </li>
           <li class="info humidity">
             <h2 class="title">HUMIDITY</h2>
-            <span class="update" id="humidity">23%</span>
+            <span class="update" id="humidity">21%</span>
           </li>
         </ul>
       </div>
@@ -361,16 +362,24 @@ DHT dht(DHT11PIN, DHT11);         // for ESP32 Microcontroller
           "rotate(" + minAngle + "deg)";
       }
 
+
+     
+      document.getElementById("temp").innerHTML = readDHTTemperature();
+      document.getElementById("humi").innerHTML = readHumidityTemperature();
+
+      document.getElementById("rain").innerHTML = readRain();
+
+
     </script>
   </body>
-</html>
-)rawliteral";
+</html>)rawliteral";
 server.send(200,"text/html",index_html);
 });
 
 server.begin();
 Serial.println("Web Server Started");
-  }
+  
+ }
 void loop()
 {
 
@@ -383,68 +392,61 @@ void loop()
 
 
 
-String readDHTTemperature()
+char readDHTTemperature()
   {
-      float temp = dht.readTemperature();
+       temp = dht.readTemperature();
       if (isnan(temp))
       {    
       Serial.println("Failed to read from DHT11 sensor!");
-      return "--";
       }
        else
        {
         Serial.print("Temperature: ");
         Serial.print(temp);
         Serial.print("ºC ");
+        Serial.print("\t");
+
+        return char(temp);
 
        }
         server.handleClient();
+        delay(1500);
   }
 
-  String readDHTHumidity()
+  char readDHTHumidity()
   {
-      float humi = dht.readHumidity();
+       humi = dht.readHumidity();
       if (isnan(humi)) 
       {
       Serial.println("Failed to read from DHT11 sensor!");
-      return "--";
       }
       else
       {
-       Serial.println(humi);
+        Serial.print("Humidity: ");
+        Serial.print(humi);
+        Serial.print("\t");
 
-       Serial.print(humi);
-
-//       String(humi);
+        return char(humi);
+        
       }
       
       server.handleClient();
-
+      delay(1500);
   }
 
-  String readRain()
+  char readRain()
   {
 
-      digitalWrite(sensorPower, HIGH);  // Turn the sensor ON
-      delay(10);                        // Allow power to settle
-      int rainAnalogVal = analogRead(rainAnalog);
-//    int rainDigitalVal = digitalRead(rainDigital);
-//    return String(rainAnalogVal);
+       rainAnalogVal = analogRead(rainAnalog);
+       rainDigitalVal = digitalRead(rainDigital);
+       Serial.print("Rain: ");
 
-
-      if(rainAnalogVal < 200)    //setting up a threshold value 
-      {  
-        blrain = true;
-      }
-      else {
-        blrain = false;
-      }
-        digitalWrite(sensorPower, LOW);    // Turn the sensor OFF
-        Serial.print(rainAnalogVal);
+       Serial.print(rainDigitalVal);
 
        Serial.print("\t");
-       Serial.println(blrain);
-       delay(200);
        server.handleClient();
+       delay(2000);
+       return char(rainDigitalVal);
+
 
   }
